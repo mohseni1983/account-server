@@ -25,9 +25,13 @@ db.exec(`
     referrer_name TEXT NOT NULL,
     tracking_code TEXT NOT NULL UNIQUE,
     status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'approved', 'rejected')),
+    connection_type TEXT DEFAULT 'openvpn' CHECK(connection_type IN ('openvpn', 'v2ray')),
     username TEXT,
     password TEXT,
     profile_file_path TEXT,
+    v2ray_config TEXT,
+    bandwidth_used BIGINT DEFAULT 0,
+    bandwidth_limit BIGINT DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );

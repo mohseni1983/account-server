@@ -82,6 +82,45 @@ export default function DownloadsPage() {
     },
   ];
 
+  const v2rayClients = [
+    {
+      name: 'V2RayNG (Android)',
+      icon: '🤖',
+      links: [
+        { name: 'Google Play', url: 'https://play.google.com/store/apps/details?id=com.v2ray.ang', external: true },
+        { name: 'GitHub Releases', url: 'https://github.com/2dust/v2rayNG/releases', external: true },
+      ],
+    },
+    {
+      name: 'V2RayU (macOS)',
+      icon: '🍎',
+      links: [
+        { name: 'GitHub Releases', url: 'https://github.com/yanue/V2rayU/releases', external: true },
+      ],
+    },
+    {
+      name: 'V2RayN (Windows)',
+      icon: '🪟',
+      links: [
+        { name: 'GitHub Releases', url: 'https://github.com/2dust/v2rayN/releases', external: true },
+      ],
+    },
+    {
+      name: 'Shadowrocket (iOS)',
+      icon: '📱',
+      links: [
+        { name: 'App Store', url: 'https://apps.apple.com/app/shadowrocket/id932747118', external: true },
+      ],
+    },
+    {
+      name: 'V2RayX (macOS)',
+      icon: '🍎',
+      links: [
+        { name: 'GitHub Releases', url: 'https://github.com/Cenmrev/V2RayX/releases', external: true },
+      ],
+    },
+  ];
+
   // Group uploaded files by platform
   const filesByPlatform = uploadedFiles.reduce((acc: Record<string, ClientFile[]>, file: ClientFile) => {
     if (!acc[file.platform]) {
@@ -116,6 +155,43 @@ export default function DownloadsPage() {
           </h1>
 
           <div className="space-y-6">
+            <div className="border border-purple-200 rounded-lg p-6 bg-purple-50">
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-gray-900">
+                <span className="text-2xl">🚀</span>
+                V2Ray Clients
+              </h2>
+              <div className="space-y-4">
+                {v2rayClients.map((client) => (
+                  <div key={client.name} className="border border-purple-200 rounded-lg p-4 bg-white">
+                    <h3 className="text-lg font-bold mb-2 flex items-center gap-2 text-gray-900">
+                      <span>{client.icon}</span>
+                      {client.name}
+                    </h3>
+                    <div className="space-y-2">
+                      {client.links.map((link, idx) => (
+                        <a
+                          key={idx}
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors text-center font-medium"
+                        >
+                          {link.name}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="border border-blue-200 rounded-lg p-6 bg-blue-50">
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-gray-900">
+                <span className="text-2xl">🔐</span>
+                OpenVPN Clients
+              </h2>
+            </div>
+
             {clients.map((client) => (
               <div key={client.name} className="border border-gray-200 rounded-lg p-6 bg-white">
                 <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-gray-900">

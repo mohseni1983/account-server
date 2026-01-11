@@ -11,8 +11,16 @@ export default function AdminPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [approveData, setApproveData] = useState<{ [key: number]: { username: string; password: string } }>({});
-  const [activeTab, setActiveTab] = useState<'users' | 'files'>('users');
+  const [approveData, setApproveData] = useState<{ 
+    [key: number]: { 
+      username: string; 
+      password: string; 
+      connection_type?: string;
+      bandwidth_limit?: string;
+      v2ray_config?: string;
+    } 
+  }>({});
+  const [activeTab, setActiveTab] = useState<'users' | 'files' | 'settings'>('users');
   const [clientFiles, setClientFiles] = useState<any[]>([]);
   const [uploadData, setUploadData] = useState({
     platform: '',
@@ -20,6 +28,13 @@ export default function AdminPage() {
     description: '',
     file: null as File | null,
   });
+  const [passwordData, setPasswordData] = useState({
+    current_password: '',
+    new_password: '',
+    confirm_password: '',
+  });
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState('');
 
   useEffect(() => {
     const savedToken = localStorage.getItem('admin_token');
@@ -119,6 +134,9 @@ export default function AdminPage() {
           user_id: userId,
           username: approveInfo.username,
           password: approveInfo.password,
+          connection_type: approveInfo.connection_type || 'openvpn',
+          bandwidth_limit: approveInfo.bandwidth_limit ? parseInt(approveInfo.bandwidth_limit) * 1024 * 1024 * 1024 : 0, // Convert GB to bytes
+          v2ray_config: approveInfo.v2ray_config,
         }),
       });
 
@@ -132,7 +150,16 @@ export default function AdminPage() {
 
       // Refresh users list
       await fetchUsers(token);
-      setApproveData({ ...approveData, [userId]: { username: '', password: '' } });
+      setApproveData({ 
+        ...approveData, 
+        [userId]: { 
+          username: '', 
+          password: '', 
+          connection_type: 'openvpn',
+          bandwidth_limit: '',
+          v2ray_config: '',
+        } 
+      });
     } catch (err) {
       setError('خطا در ارتباط با سرور');
     } finally {
@@ -146,6 +173,39 @@ export default function AdminPage() {
     setIsLoggedIn(false);
     setUsers([]);
     setClientFiles([]);
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError('');
+    setPasswordSuccess('');
+    setLoading(true);
+
+    try {
+      const response = await fetch('/api/admin/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(passwordData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setPasswordError(data.error || 'خطا در تغییر رمز عبور');
+        setLoading(false);
+        return;
+      }
+
+      setPasswordSuccess('رمز عبور با موفقیت تغییر کرد');
+      setPasswordData({ current_password: '', new_password: '', confirm_password: '' });
+    } catch (err) {
+      setPasswordError('خطا در ارتباط با سرور');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleFileUpload = async (e: React.FormEvent) => {
@@ -241,7 +301,7 @@ export default function AdminPage() {
 
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4" dir="rtl">
         <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
           <h1 className="text-2xl font-bold text-center text-gray-900 mb-6">
             ورود به پنل مدیریت
@@ -310,7 +370,7 @@ export default function AdminPage() {
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-2 mb-6 border-b border-gray-200">
+          <div className="flex gap-2 mb-6 border-b border-gray-200" dir="rtl">
             <button
               onClick={() => setActiveTab('users')}
               className={`px-4 py-2 font-medium transition-colors ${
@@ -331,6 +391,16 @@ export default function AdminPage() {
             >
               مدیریت فایل‌های کلاینت
             </button>
+            <button
+              onClick={() => setActiveTab('settings')}
+              className={`px-4 py-2 font-medium transition-colors ${
+                activeTab === 'settings'
+                  ? 'border-b-2 border-blue-600 text-blue-600'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              تنظیمات
+            </button>
           </div>
 
           {error && (
@@ -339,7 +409,7 @@ export default function AdminPage() {
             </div>
           )}
 
-          {activeTab === 'files' ? (
+          {activeTab === 'files' && (
             <div className="space-y-6">
               {/* Upload Form */}
               <div className="border border-gray-200 rounded-lg p-6 bg-gray-50">
@@ -416,8 +486,8 @@ export default function AdminPage() {
                 <h2 className="text-xl font-bold text-gray-900 p-4 bg-gray-100 border-b border-gray-200">
                   فایل‌های آپلود شده
                 </h2>
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
+                <div className="overflow-x-auto" dir="rtl">
+                  <table className="w-full border-collapse" dir="rtl">
                     <thead>
                       <tr className="bg-gray-100">
                         <th className="border border-gray-300 p-2 text-right text-gray-900 font-bold">پلتفرم</th>
@@ -457,9 +527,11 @@ export default function AdminPage() {
                 </div>
               </div>
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
+          )}
+
+          {activeTab === 'users' && (
+            <div className="overflow-x-auto" dir="rtl">
+            <table className="w-full border-collapse" dir="rtl">
               <thead>
                 <tr className="bg-gray-100">
                   <th className="border border-gray-300 p-2 text-right text-gray-900 font-bold">کد رهگیری</th>
@@ -467,8 +539,10 @@ export default function AdminPage() {
                   <th className="border border-gray-300 p-2 text-right text-gray-900 font-bold">کد ملی</th>
                   <th className="border border-gray-300 p-2 text-right text-gray-900 font-bold">نام معرف</th>
                   <th className="border border-gray-300 p-2 text-right text-gray-900 font-bold">وضعیت</th>
+                  <th className="border border-gray-300 p-2 text-right text-gray-900 font-bold">نوع اتصال</th>
                   <th className="border border-gray-300 p-2 text-right text-gray-900 font-bold">نام کاربری</th>
                   <th className="border border-gray-300 p-2 text-right text-gray-900 font-bold">رمز عبور</th>
+                  <th className="border border-gray-300 p-2 text-right text-gray-900 font-bold">محدودیت ترافیک (GB)</th>
                   <th className="border border-gray-300 p-2 text-right text-gray-900 font-bold">عملیات</th>
                 </tr>
               </thead>
@@ -491,6 +565,34 @@ export default function AdminPage() {
                       >
                         {getStatusText(user.status).text}
                       </span>
+                    </td>
+                    <td className="border border-gray-200 p-2">
+                      {user.status === 'approved' ? (
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          user.connection_type === 'v2ray' 
+                            ? 'bg-purple-100 text-purple-900' 
+                            : 'bg-blue-100 text-blue-900'
+                        }`}>
+                          {user.connection_type === 'v2ray' ? 'V2Ray' : 'OpenVPN'}
+                        </span>
+                      ) : (
+                        <select
+                          value={approveData[user.id]?.connection_type || 'openvpn'}
+                          onChange={(e) =>
+                            setApproveData({
+                              ...approveData,
+                              [user.id]: {
+                                ...approveData[user.id],
+                                connection_type: e.target.value,
+                              },
+                            })
+                          }
+                          className="w-full px-2 py-1 border rounded text-sm text-gray-900 bg-white"
+                        >
+                          <option value="openvpn">OpenVPN</option>
+                          <option value="v2ray">V2Ray</option>
+                        </select>
+                      )}
                     </td>
                     <td className="border border-gray-200 p-2">
                       {user.status === 'approved' ? (
@@ -535,23 +637,76 @@ export default function AdminPage() {
                       )}
                     </td>
                     <td className="border border-gray-200 p-2">
-                      {user.status === 'pending' && (
-                        <button
-                          onClick={() => handleApprove(user.id)}
-                          disabled={loading}
-                          className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition-colors text-sm font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
-                        >
-                          تایید
-                        </button>
+                      {user.status === 'approved' ? (
+                        <span className="text-gray-900">
+                          {user.bandwidth_limit ? `${(user.bandwidth_limit / 1024 / 1024 / 1024).toFixed(2)} GB` : 'نامحدود'}
+                        </span>
+                      ) : (
+                        <input
+                          type="number"
+                          placeholder="GB (0 = نامحدود)"
+                          value={approveData[user.id]?.bandwidth_limit || ''}
+                          onChange={(e) =>
+                            setApproveData({
+                              ...approveData,
+                              [user.id]: {
+                                ...approveData[user.id],
+                                bandwidth_limit: e.target.value,
+                              },
+                            })
+                          }
+                          className="w-full px-2 py-1 border rounded text-sm text-gray-900 bg-white"
+                          min="0"
+                          step="0.1"
+                        />
                       )}
-                      {user.status === 'approved' && user.profile_file_path && (
-                        <a
-                          href={`/api/download/${user.profile_file_path}`}
-                          download
-                          className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors text-sm font-medium inline-block"
-                        >
-                          دانلود پروفایل
-                        </a>
+                    </td>
+                    <td className="border border-gray-200 p-2">
+                      {user.status === 'pending' && (
+                        <div className="space-y-2">
+                          {approveData[user.id]?.connection_type === 'v2ray' && (
+                            <div>
+                              <textarea
+                                placeholder="آدرس کامل V2Ray (vmess:// یا vless://)"
+                                value={approveData[user.id]?.v2ray_config || ''}
+                                onChange={(e) =>
+                                  setApproveData({
+                                    ...approveData,
+                                    [user.id]: {
+                                      ...approveData[user.id],
+                                      v2ray_config: e.target.value,
+                                    },
+                                  })
+                                }
+                                className="w-full px-2 py-1 border rounded text-xs text-gray-900 bg-white"
+                                rows={3}
+                              />
+                            </div>
+                          )}
+                          <button
+                            onClick={() => handleApprove(user.id)}
+                            disabled={loading}
+                            className="w-full bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition-colors text-sm font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+                          >
+                            تایید
+                          </button>
+                        </div>
+                      )}
+                      {user.status === 'approved' && (
+                        <div className="space-y-1">
+                          {user.connection_type === 'openvpn' && user.profile_file_path && (
+                            <a
+                              href={`/api/download/${user.profile_file_path}`}
+                              download
+                              className="block bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors text-sm font-medium text-center"
+                            >
+                              دانلود OpenVPN
+                            </a>
+                          )}
+                          {user.connection_type === 'v2ray' && user.v2ray_config && (
+                            <span className="block text-xs text-gray-600 text-center">V2Ray فعال</span>
+                          )}
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -564,7 +719,77 @@ export default function AdminPage() {
                 درخواستی یافت نشد
               </div>
             )}
-          </div>
+            </div>
+          )}
+
+          {activeTab === 'settings' && (
+            <div className="space-y-6">
+              <div className="border border-gray-200 rounded-lg p-6 bg-gray-50">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">تغییر رمز عبور</h2>
+                <form onSubmit={handleChangePassword} className="space-y-4">
+                  {passwordError && (
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                      {passwordError}
+                    </div>
+                  )}
+                  {passwordSuccess && (
+                    <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+                      {passwordSuccess}
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-1">
+                      رمز عبور فعلی
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      value={passwordData.current_password}
+                      onChange={(e) => setPasswordData({ ...passwordData, current_password: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-1">
+                      رمز عبور جدید
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      value={passwordData.new_password}
+                      onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                      minLength={6}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">حداقل ۶ کاراکتر</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-1">
+                      تأیید رمز عبور جدید
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      value={passwordData.confirm_password}
+                      onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                      minLength={6}
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
+                  >
+                    {loading ? 'در حال تغییر...' : 'تغییر رمز عبور'}
+                  </button>
+                </form>
+              </div>
+            </div>
           )}
         </div>
       </div>

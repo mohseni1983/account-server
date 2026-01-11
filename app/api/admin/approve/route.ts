@@ -30,7 +30,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { user_id, username, password } = await request.json();
+    const { 
+      user_id, 
+      username, 
+      password, 
+      connection_type = 'openvpn',
+      bandwidth_limit = 0,
+      v2ray_config,
+    } = await request.json();
 
     if (!user_id || !username || !password) {
       return NextResponse.json(
@@ -48,13 +55,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create profile file
-    const profilePath = createProfileFile(existingUser.tracking_code, MASTER_PROFILE_PATH);
+    let profilePath = null;
+
+    if (connection_type === 'openvpn') {
+      // Create OpenVPN profile file
+      profilePath = createProfileFile(existingUser.tracking_code, MASTER_PROFILE_PATH);
+    }
+
+    // Validate V2Ray config if connection type is V2Ray
+    if (connection_type === 'v2ray' && !v2ray_config) {
+      return NextResponse.json(
+        { error: 'آدرس V2Ray الزامی است' },
+        { status: 400 }
+      );
+    }
 
     // Update user
-    db.prepare(
-      'UPDATE users SET status = ?, username = ?, password = ?, profile_file_path = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
-    ).run('approved', username, password, profilePath, user_id);
+    const updateQuery = connection_type === 'openvpn'
+      ? 'UPDATE users SET status = ?, username = ?, password = ?, profile_file_path = ?, connection_type = ?, bandwidth_limit = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+      : 'UPDATE users SET status = ?, username = ?, password = ?, v2ray_config = ?, connection_type = ?, bandwidth_limit = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?';
+
+    if (connection_type === 'openvpn') {
+      db.prepare(updateQuery).run('approved', username, password, profilePath, connection_type, bandwidth_limit, user_id);
+    } else {
+      db.prepare(updateQuery).run('approved', username, password, v2ray_config, connection_type, bandwidth_limit, user_id);
+    }
 
     // Get updated user
     const updatedUser = db.prepare('SELECT * FROM users WHERE id = ?').get(user_id) as any;
@@ -63,7 +88,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       user: userData,
-      profile_url: `/api/download/${profilePath}`,
+      profile_url: profilePath ? `/api/download/${profilePath}` : null,
     });
   } catch (error: any) {
     console.error('Approve error:', error);
@@ -73,4 +98,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
