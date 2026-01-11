@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  vpn-share:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vpn-share
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
+    volumes:
+      # Mount data directory to persist database and files
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
