@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# VPN Share - سیستم مدیریت VPN
 
-## Getting Started
+یک سیستم مدیریت VPN ساده با Next.js که امکان ثبت نام کاربران، مدیریت درخواست‌ها و توزیع فایل‌های پروفایل OpenVPN را فراهم می‌کند.
 
-First, run the development server:
+## ویژگی‌ها
 
+- ✅ صفحه ثبت نام با دریافت شماره موبایل، کد ملی و نام معرف
+- ✅ تولید کد رهگیری ۱۰ حرفی رندوم
+- ✅ پنل مدیریت برای تایید درخواست‌ها
+- ✅ تولید خودکار فایل‌های پروفایل با نام‌های رندوم در فولدرهای تو در تو
+- ✅ صفحه پیگیری درخواست با کد رهگیری
+- ✅ صفحه دانلود کلاینت OpenVPN
+
+## نصب و راه‌اندازی
+
+1. نصب وابستگی‌ها:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. ایجاد فایل پروفایل اصلی:
+فایل `data/master-profile.ovpn` را با پروفایل OpenVPN واقعی خود جایگزین کنید.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. اجرای برنامه:
+```bash
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. دسترسی به برنامه:
+- صفحه اصلی: http://localhost:3000
+- پنل مدیریت: http://localhost:3000/admin
+  - نام کاربری پیش‌فرض: `admin`
+  - رمز عبور پیش‌فرض: `admin123`
 
-## Learn More
+## ساختار پروژه
 
-To learn more about Next.js, take a look at the following resources:
+```
+├── app/
+│   ├── api/
+│   │   ├── register/          # API ثبت نام
+│   │   ├── track/             # API پیگیری
+│   │   ├── admin/             # API های مدیریت
+│   │   └── download/          # API دانلود فایل
+│   ├── register/              # صفحه ثبت نام
+│   ├── track/                  # صفحه پیگیری
+│   ├── downloads/              # صفحه دانلود کلاینت
+│   └── admin/                  # پنل مدیریت
+├── lib/
+│   ├── db.ts                   # تنظیمات دیتابیس
+│   └── utils.ts                # توابع کمکی
+└── data/
+    ├── vpn-share.db            # دیتابیس SQLite
+    ├── master-profile.ovpn     # فایل پروفایل اصلی
+    └── profiles/               # فایل‌های پروفایل تولید شده
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## امنیت
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+⚠️ **هشدار**: این پروژه برای استفاده در محیط production نیاز به تنظیمات امنیتی بیشتری دارد:
 
-## Deploy on Vercel
+1. تغییر `JWT_SECRET` در متغیرهای محیطی
+2. تغییر رمز عبور پیش‌فرض ادمین
+3. استفاده از HTTPS
+4. اضافه کردن rate limiting
+5. اعتبارسنجی بیشتر ورودی‌ها
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## مجوز
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT
+# account-server
