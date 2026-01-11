@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     container_name: vpn-share
     ports:
-      - "3000:3000"
+      - "13000:3000"
     environment:
       - NODE_ENV=production
       - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
